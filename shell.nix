@@ -16,6 +16,7 @@ pkgs.mkShell {
     gopls
     gotools
     go-tools
+    golines
 
     # Deployments
     docker

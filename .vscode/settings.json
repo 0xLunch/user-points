@@ -1,4 +1,14 @@
 {
+    // load nix-shell dev environment
     "nixEnvSelector.suggestion": false,
-    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix"
+    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
+    // use golines for formatting long lines
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.go$",
+                "cmd": "golines ${file} -w"
+            }
+        ]
+    }
 }
