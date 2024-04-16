@@ -59,6 +59,22 @@ func (db *DB) LoginUser(ctx context.Context, username, password string) (uuid.UU
 	return userID, nil
 }
 
+// GetUserPoints retrieves the points of the authenticated user.
+func (db *DB) GetUserPoints(ctx context.Context, userID uuid.UUID) (int, error) {
+	var points int
+	err := db.Pool.QueryRow(ctx, `SELECT points FROM users WHERE id = $1`, userID).Scan(&points)
+	if err != nil {
+		return 0, err
+	}
+	return points, nil
+}
+
+// UpdateUserPoints updates the points of a user.
+func (db *DB) UpdateUserPoints(ctx context.Context, userID uuid.UUID, points int) error {
+	_, err := db.Pool.Exec(ctx, `UPDATE users SET points = $1 WHERE id = $2`, points, userID)
+	return err
+}
+
 // hashPassword securely hashes the password.
 func hashPassword(password string) (string, error) {
 	// increase bcrypt cost

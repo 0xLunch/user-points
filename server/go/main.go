@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/0xlunch/user-service/db"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 )
 
 // Postgres connection string
@@ -23,7 +23,7 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 	defer cancel()
 
 	// create gin router
-	r := gin.Default()
+	r := chi.NewRouter()
 
 	// new database pool
 	db, err := db.NewDB(connectionString)
