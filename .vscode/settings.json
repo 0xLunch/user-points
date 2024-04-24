@@ -1,7 +1,6 @@
 {
     // load nix-shell dev environment
     "nixEnvSelector.suggestion": false,
-    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix",
     // use golines for formatting long lines
     "emeraldwalk.runonsave": {
         "commands": [
@@ -10,5 +9,6 @@
                 "cmd": "golines ${file} -w"
             }
         ]
-    }
+    },
+    "nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix"
 }
