@@ -24,7 +24,7 @@ func (db *DB) RegisterUser(ctx context.Context, username, password string) error
 	}
 
 	// Insert the user into the database
-	_, err = db.Pool.Exec(
+	tag, err := db.Pool.Exec(
 		ctx,
 		`INSERT INTO users (username, password) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING`,
 		username,
@@ -32,6 +32,11 @@ func (db *DB) RegisterUser(ctx context.Context, username, password string) error
 	)
 	if err != nil {
 		return err
+	}
+
+	// duplicate username found
+	if tag.RowsAffected() == 0 {
+		return errors.New("username already exists")
 	}
 
 	return nil
@@ -46,14 +51,14 @@ func (db *DB) LoginUser(ctx context.Context, username, password string) (uuid.UU
 		Scan(&userID, &hashedPassword)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return uuid.Nil, errors.New("invalid username or password")
+			return uuid.Nil, errors.New("invalid username")
 		}
 		return uuid.Nil, err
 	}
 
 	// Verify the password
 	if err := verifyPassword(hashedPassword, password); err != nil {
-		return uuid.Nil, errors.New("invalid username or password")
+		return uuid.Nil, errors.New("invalid password")
 	}
 
 	return userID, nil

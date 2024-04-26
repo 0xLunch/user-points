@@ -31,6 +31,7 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer db.Pool.Close()
 
 	// setup routes
 	routes.SetupRoutes(r, db)
