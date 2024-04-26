@@ -74,6 +74,20 @@ func (db *DB) GetUserPoints(ctx context.Context, userID uuid.UUID) (int, error) 
 	return points, nil
 }
 
+// AddUserPoints adds points to a user.
+func (db *DB) AddUserPoints(ctx context.Context, userID uuid.UUID, points int) error {
+	if points < 1 {
+		return errors.New("points value must be >=1")
+	}
+	_, err := db.Pool.Exec(
+		ctx,
+		`UPDATE users SET points = points + $1 WHERE id = $2`,
+		points,
+		userID,
+	)
+	return err
+}
+
 // UpdateUserPoints updates the points of a user.
 func (db *DB) UpdateUserPoints(ctx context.Context, userID uuid.UUID, points int) error {
 	_, err := db.Pool.Exec(ctx, `UPDATE users SET points = $1 WHERE id = $2`, points, userID)

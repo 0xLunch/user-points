@@ -8,6 +8,7 @@ import (
 	"time"
 
 	db_client "github.com/0xlunch/user-service/internal/db"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	tc "github.com/testcontainers/testcontainers-go"
@@ -22,9 +23,11 @@ func TestDB(t *testing.T) {
 
 var _ = Describe("Database", Ordered, func() {
 	var (
-		container  tc.Container
-		ctx        context.Context
-		connString string
+		container      tc.Container
+		ctx            context.Context
+		connString     string
+		testDB         *db_client.DB
+		loggedInUserId uuid.UUID
 	)
 
 	dbName := "user_points"
@@ -34,7 +37,7 @@ var _ = Describe("Database", Ordered, func() {
 	// Setup
 	BeforeAll(func() {
 		ctx = context.Background()
-		// Start PostgreSQL container
+		// Start PostgreSQL testcontainer
 		c, err := postgres.RunContainer(ctx,
 			tc.WithImage("docker.io/postgres:16-alpine"),
 			postgres.WithDatabase(dbName),
@@ -52,36 +55,29 @@ var _ = Describe("Database", Ordered, func() {
 
 		// set container reference
 		container = c
+
+		// ensure we have a db connection
+		fmt.Println(connString)
+
+		db, err := db_client.NewDB(connString)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(db).NotTo(BeNil())
+
+		// reference testDB
+		testDB = db
 	})
 
 	// Cleanup
 	AfterAll(func() {
 		err := container.Terminate(ctx)
 		Expect(err).NotTo(HaveOccurred())
+		if testDB != nil {
+			testDB.Pool.Close()
+		}
 	})
 
-	// Test DB connection and
+	// Test registering user
 	When("registering users to the database", func() {
-
-		var testDB *db_client.DB
-
-		// close pool connection after tests
-		AfterAll(func() {
-			if testDB != nil {
-				testDB.Pool.Close()
-			}
-		})
-
-		It("should successfully connect to the database", func() {
-			fmt.Println(connString)
-
-			db, err := db_client.NewDB(connString)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(db).NotTo(BeNil())
-
-			// reference testDB
-			testDB = db
-		})
 
 		It("should register a user", func() {
 			Expect(testDB).NotTo(BeNil())
@@ -114,26 +110,8 @@ var _ = Describe("Database", Ordered, func() {
 
 	})
 
+	// Test logging in
 	When("logging user in", func() {
-		var testDB *db_client.DB
-
-		// close pool connection after tests
-		AfterAll(func() {
-			if testDB != nil {
-				testDB.Pool.Close()
-			}
-		})
-
-		It("should successfully connect to the database", func() {
-			fmt.Println(connString)
-
-			db, err := db_client.NewDB(connString)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(db).NotTo(BeNil())
-
-			// reference testDB
-			testDB = db
-		})
 
 		It("should login user with correct password", func() {
 			Expect(testDB).NotTo(BeNil())
@@ -141,8 +119,10 @@ var _ = Describe("Database", Ordered, func() {
 			ctx := context.Background()
 			username := "username"
 			password := "paragon"
-			_, err := testDB.LoginUser(ctx, username, password)
+			userID, err := testDB.LoginUser(ctx, username, password)
 			Expect(err).NotTo(HaveOccurred())
+			// save logged in user
+			loggedInUserId = userID
 		})
 
 		It("should not login user with incorrect password", func() {
@@ -164,6 +144,76 @@ var _ = Describe("Database", Ordered, func() {
 			_, err := testDB.LoginUser(ctx, username, password)
 			Expect(err).To(HaveOccurred(), "invalid username")
 		})
+	})
+
+	// Test points
+	When("getting and updating user points", func() {
+
+		// userPoints default to 0
+		userPoints := 0
+
+		It("should fetch user's points", func() {
+			Expect(testDB).NotTo(BeNil())
+			// ensure logged in user is saved
+			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
+			ctx := context.Background()
+
+			// get points
+			points, err := testDB.GetUserPoints(ctx, loggedInUserId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(points).To(Equal(userPoints))
+		})
+
+		It("should update user's points", func() {
+			Expect(testDB).NotTo(BeNil())
+			// ensure logged in user is saved
+			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
+			ctx := context.Background()
+
+			// update points
+			updatePoints := 500
+			err := testDB.UpdateUserPoints(ctx, loggedInUserId, updatePoints)
+			Expect(err).NotTo(HaveOccurred())
+
+			// fetch updated points
+			points, err := testDB.GetUserPoints(ctx, loggedInUserId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(points).To(Equal(updatePoints))
+			// update userPoints reference
+			userPoints = updatePoints
+		})
+
+		It("should add to user's points", func() {
+			Expect(testDB).NotTo(BeNil())
+			// ensure logged in user is saved
+			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
+			ctx := context.Background()
+			// add points
+			addPoints := 200
+			err := testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
+			Expect(err).NotTo(HaveOccurred())
+			// fetch updated points
+			points, err := testDB.GetUserPoints(ctx, loggedInUserId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(points).To(Equal(userPoints + addPoints))
+			// update userPoints reference
+			userPoints += addPoints
+		})
+
+		It("should not add zero or negative points", func() {
+			Expect(testDB).NotTo(BeNil())
+			// ensure logged in user is saved
+			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
+			ctx := context.Background()
+			// add points
+			addPoints := 0
+			err := testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
+			Expect(err).To(HaveOccurred(), "points value must be >=1")
+			addPoints--
+			err = testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
+			Expect(err).To(HaveOccurred(), "points value must be >=1")
+		})
+
 	})
 
 })
