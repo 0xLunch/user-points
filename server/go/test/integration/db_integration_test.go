@@ -34,8 +34,6 @@ var _ = Describe("Database", Ordered, func() {
 		ctx = context.Background()
 		// Start PostgreSQL container
 		c, err := postgres.RunContainer(ctx,
-			// podman provider
-			tc.CustomizeRequest(tc.GenericContainerRequest{ProviderType: tc.ProviderPodman}),
 			tc.WithImage("docker.io/postgres:16-alpine"),
 			//postgres.WithInitScripts(filepath.Join("testdata", "init-user-db.sh")),
 			//postgres.WithConfigFile(filepath.Join("testdata", "my-postgres.conf")),
