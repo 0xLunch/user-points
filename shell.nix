@@ -19,7 +19,6 @@ pkgs.mkShell {
     golines
 
     # Deployments
-    docker
     terraform
   ];
 }
