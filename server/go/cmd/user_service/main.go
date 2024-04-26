@@ -10,7 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/0xlunch/user-service/db"
+	"github.com/0xlunch/user-service/internal/db"
+	"github.com/0xlunch/user-service/internal/routes"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -31,8 +32,8 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 		return err
 	}
 
-	// setupRoutes from routes.go
-	setupRoutes(r, db)
+	// setup routes
+	routes.SetupRoutes(r, db)
 
 	// http wrap for graceful shutdown
 	srv := &http.Server{

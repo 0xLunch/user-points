@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0xlunch/user-service/db"
+	"github.com/0xlunch/user-service/internal/db"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 )

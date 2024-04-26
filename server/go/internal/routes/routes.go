@@ -1,12 +1,12 @@
-package main
+package routes
 
 import (
-	"github.com/0xlunch/user-service/db"
-	"github.com/0xlunch/user-service/handlers"
+	"github.com/0xlunch/user-service/internal/db"
+	"github.com/0xlunch/user-service/internal/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
-func setupRoutes(r *chi.Mux, db *db.DB) {
+func SetupRoutes(r *chi.Mux, db *db.DB) {
 
 	h := handlers.NewHandlers(db)
 
