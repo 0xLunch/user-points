@@ -67,7 +67,8 @@ func (db *DB) LoginUser(ctx context.Context, username, password string) (uuid.UU
 // GetUserPoints retrieves the points of the authenticated user.
 func (db *DB) GetUserPoints(ctx context.Context, userID uuid.UUID) (int, error) {
 	var points int
-	err := db.Pool.QueryRow(ctx, `SELECT points FROM users WHERE id = $1`, userID).Scan(&points)
+	err := db.Pool.QueryRow(ctx, `SELECT points FROM users_view WHERE id = $1`, userID).
+		Scan(&points)
 	if err != nil {
 		return 0, err
 	}
