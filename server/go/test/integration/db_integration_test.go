@@ -188,6 +188,7 @@ var _ = Describe("Database", Ordered, func() {
 			// ensure logged in user is saved
 			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
 			ctx := context.Background()
+
 			// add points
 			addPoints := 200
 			err := testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
@@ -196,8 +197,6 @@ var _ = Describe("Database", Ordered, func() {
 			points, err := testDB.GetUserPoints(ctx, loggedInUserId)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(points).To(Equal(userPoints + addPoints))
-			// update userPoints reference
-			userPoints += addPoints
 		})
 
 		It("should not add zero or negative points", func() {
@@ -205,6 +204,7 @@ var _ = Describe("Database", Ordered, func() {
 			// ensure logged in user is saved
 			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
 			ctx := context.Background()
+
 			// add points
 			addPoints := 0
 			err := testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
@@ -212,6 +212,18 @@ var _ = Describe("Database", Ordered, func() {
 			addPoints--
 			err = testDB.AddUserPoints(ctx, loggedInUserId, addPoints)
 			Expect(err).To(HaveOccurred(), "points value must be >=1")
+		})
+
+		It("should not update user's points to negative", func() {
+			Expect(testDB).NotTo(BeNil())
+			// ensure logged in user is saved
+			Expect(loggedInUserId).NotTo(Equal(uuid.Nil))
+			ctx := context.Background()
+
+			// update points
+			updatePoints := -1
+			err := testDB.UpdateUserPoints(ctx, loggedInUserId, updatePoints)
+			Expect(err).To(HaveOccurred(), "points value must be positive")
 		})
 
 	})

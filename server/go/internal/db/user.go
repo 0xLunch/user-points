@@ -90,6 +90,9 @@ func (db *DB) AddUserPoints(ctx context.Context, userID uuid.UUID, points int) e
 
 // UpdateUserPoints updates the points of a user.
 func (db *DB) UpdateUserPoints(ctx context.Context, userID uuid.UUID, points int) error {
+	if points < 0 {
+		return errors.New("points value must be positive")
+	}
 	_, err := db.Pool.Exec(ctx, `UPDATE users SET points = $1 WHERE id = $2`, points, userID)
 	return err
 }
@@ -110,5 +113,3 @@ func hashPassword(password string) (string, error) {
 func verifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
-
-// Add GetUserPoints, UpdateUserPoints, etc.
